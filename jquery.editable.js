@@ -6,8 +6,7 @@
 * @license Dual licensed under the MIT or GPL Version 2 licenses
 * @version 1.0
 *
-*/
-(function($) {
+*/(function($) {
 
     var $win = $(window), // Reference to window
 
