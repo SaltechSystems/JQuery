@@ -2,6 +2,7 @@
 
 This plugin makes it possible to edit the content of an element simply by double clicking on it. 
 
+
 ## How does it work?
 
 Double click on an element and it turns into a textarea. The content of the element is now displayed in the textarea.
