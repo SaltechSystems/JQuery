@@ -135,6 +135,8 @@
             .focus()
             .get(0).select();
 
+            adjustTextAreaHeight();
+
             $el.trigger('edit', [$textArea]);
     },
 
@@ -190,12 +192,12 @@
                 this.editable('destroy');
             }
 
-            opts = $.extend(opts, {
+            opts = $.extend({
                 event : 'dblclick',
                 touch : true,
                 lineBreaks : true,
                 toggleFontSize : true
-            });
+            }, opts);
 
             if( 'ontouchend' in window && opts.touch ) {
                 opts.event = DBL_TAP_EVENT;
