@@ -2,12 +2,14 @@
 
 This plugin makes it possible to edit the content of an element simply by double clicking on it. 
 
+
 ## How does it work?
 
 Double click on an element and it turns into a textarea. The content of the element is now displayed in the textarea.
 When you're done editing all you have to do is to click some where outside the textarea and the content will
 be added to the DOM. You can toggle the size of the font by pressing the keys cmd + &uarr; or cmd + &darr; while editing the content 
-(ctrl-key instead of cmd if you're on windows).
+(ctrl-key instead of cmd if you're on windows). If you don't want to use a plain textarea as editor you can [integrate jQuery editable
+with tinyMCE](#tinymce-integration).
 
 
 #### Code examples
@@ -20,9 +22,12 @@ $('#some-element').editable();
 // the editable feature as well as a callback function that
 // will be called when textarea gets blurred.
 $('#some-element').editable({
-    touch : true, // Whether or not to support touch (default is true)
-    lineBreaks : true, // Whether or not to convert \n to <br /> (default is true)
-    event : 'click', // The event that triggers the editor
+    touch : true, // Whether or not to support touch (default true)
+    lineBreaks : true, // Whether or not to convert \n to <br /> (default true)
+    toggleFontSize : true, // Whether or not it should be possible to change font size (default true),
+    closeOnEnter : false, // Whether or not pressing the enter key should close the editor (default false)
+    event : 'click', // The event that triggers the editor (default dblclick)
+    tinyMCE : false, // Integrate with tinyMCE by settings this option to true or an object containing your tinyMCE configuration
     callback : function( data ) {
         // Callback that will be called once the editor is blurred
         if( data.content ) {
@@ -37,15 +42,6 @@ $('#some-element').editable({
     }
 });
 
-// Call "open" to programatically turn an editable element into an editor
-$('#some-element').editable('open');
-
-// Call "close" to programatically close the editor for en element 
-// that's being edited
-$('#some-element').editable('close');
-
-// Call "destroy" to remove the possibility to edit an element
-$('#some-element').editable('destroy');
 
 // You can use $.is() to tell whether or not an element is editable or at
 // the moment being edited
@@ -56,6 +52,17 @@ if( $elem.is(':editing') ) {
 if( $elem.is(':editable') ) {
     // It's editable, lets do stuff...
 }
+
+// Call "open" to programatically turn an editable element into an editor
+$('#some-element').editable('open');
+
+// Call "close" to programatically close the editor for an element 
+// that's currently being edited
+$('#some-element').editable('close');
+
+// Call "destroy" to remove the possibility to edit an element
+$('#some-element').editable('destroy');
+
 
 // Binding an event listener that's triggered when the
 // element gets edited
@@ -82,4 +89,29 @@ $('.editable-area').editable(function(data) {
       $('input[name="' +$(this).attr('data-input')+'_fontsize"]').val(data.fontSize);
   } 
 });
+```
+
+<h2 id="tinymce-integration">Integrate plugin with tinyMCE</h2>
+
+Since version 1.3.1 it's possible to integrate this plugin with [tinyMCE](http://www.tinymce.com/).
+
+```html
+<div id="my-editable">
+  <p>Lorem te ipsum...</p>
+</div>
+<script src="tinymce/jscript/tinymce.js"><script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="js/jquery.editable.min.js"></script>
+<script>
+  $('#my-ediable').editable({
+    tinyMCE : {
+        plugins : 'autolink,lists,spellchecker',
+        skin : 'o2k7'
+        // what ever tinyMCE configuration that you want
+    },
+    callback : function(data) {
+        // ...
+    }
+  });
+</script>
 ```
