@@ -105,6 +105,9 @@
         if( navigator.userAgent.match(/webkit/i) !== null ) {
             textareaStyle = document.defaultView.getComputedStyle($el.get(0), "").cssText;
         }
+        
+        // The editor should always be static 
+        textareaStyle += 'position: static';
 
         /*
           TINYMCE EDITOR

@@ -1,15 +1,18 @@
 # jquery.editable
 
-This plugin makes it possible to edit the content of an element simply by double clicking on it. 
+This plugin makes it possible to edit the content of an element simply by double clicking on it. What sets this plugin
+aside from other similar plugins is that the editable area **won't look like your plain old boring textarea** or 
+input field. Instead, it will look as if you're editing the actually page.
 
 
 ## How does it work?
 
-Double click on an element and it turns into a textarea. The content of the element is now displayed in the textarea.
+Double click on an element and it turns into a textarea. The content of the element is now displayed in the textarea. 
+But it will not look like a textarea, the text will have the same styling as it had before it was turned into an editor.
 When you're done editing all you have to do is to click some where outside the textarea and the content will
 be added to the DOM. You can toggle the size of the font by pressing the keys cmd + &uarr; or cmd + &darr; while editing the content 
-(ctrl-key instead of cmd if you're on windows). If you don't want to use a plain textarea as editor you can [integrate jQuery editable
-with tinyMCE](#tinymce-integration).
+(ctrl-key instead of cmd if you're on windows). If you don't want to use a textarea as editor you can [integrate jQuery editable
+with tinyMCE](#integrate-plugin-with-tinymce).
 
 
 #### Code examples
@@ -99,7 +102,7 @@ Since version 1.3.1 it's possible to integrate this plugin with [tinyMCE](http:/
 <div id="my-editable">
   <p>Lorem te ipsum...</p>
 </div>
-<script src="tinymce/jscript/tinymce.js"><script>
+<script src="tinymce/jscript/tinymce.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="js/jquery.editable.min.js"></script>
 <script>
