@@ -13,10 +13,13 @@
     var $win = $(window), // Reference to window
 
     // Reference to textarea
-    $textArea = false,
+    $editElement = false,
     
     // Reference to currently edit element
     $currentlyEdited = false,
+
+    // Reference to old value in case we cancel editing
+    $oldElement = false,
 
     // Some constants
     EVENT_ATTR = 'data-edit-event',
@@ -44,13 +47,16 @@
      * Event listener that largens font size
      */
     keyHandler = function(e) {
-        if( e.keyCode == 13 && e.data.closeOnEnter ) {
+        if( e.keyCode == 27 ) {
+            resetElement($currentlyEdited, $oldElement.text());
+        }
+        else if( e.keyCode == 13 && e.data.closeOnEnter ) {
             $currentlyEdited.editable('close');
         }
         else if( e.data.toggleFontSize && (e.metaKey && (e.keyCode == 38 || e.keyCode == 40)) ) {
-            var fontSize = parseInt($textArea.css('font-size'), 10);
+            var fontSize = parseInt($editElement.css('font-size'), 10);
             fontSize += e.keyCode == 40 ? -1 : 1;
-            $textArea.css('font-size', fontSize+'px');
+            $editElement.css('font-size', fontSize+'px');
             return false;
         }
     },
@@ -60,9 +66,9 @@
      * @todo This way of doing it does not make the textarea smaller when the number of text lines gets smaller
      */
     adjustTextAreaHeight = function() {
-        if( $textArea[0].scrollHeight !== parseInt($textArea.attr('data-scroll'), 10) ) {
-            $textArea.css('height', $textArea[0].scrollHeight +'px');
-            $textArea.attr('data-scroll', $textArea[0].scrollHeight);
+        if( $editElement[0].scrollHeight !== parseInt($editElement.attr('data-scroll'), 10) ) {
+            $editElement.css('height', $editElement[0].scrollHeight +'px');
+            $editElement.attr('data-scroll', $editElement[0].scrollHeight);
         }
     },
 
@@ -73,7 +79,7 @@
     resetElement = function($el, newText) {
         $el.removeAttr('data-is-editing');
         $el.html( newText );
-        $textArea.remove();
+        $editElement.remove();
     },
 
 
@@ -86,35 +92,47 @@
             return;
 
         $currentlyEdited = $el;
+        $oldElement = $el.clone();
         $el.attr('data-is-editing', '1');
 
         var defaultText = $.trim( $el.html() ),
             defaultFontSize = $el.css('font-size'),
-            elementHeight = $el.height(),
-            textareaStyle = 'width: 96%; padding:0; margin:0; border:0; background:none;'+
-                            'font-family: '+$el.css('font-family')+'; font-size: '+$el.css('font-size')+';'+
-                            'font-weight: '+$el.css('font-weight')+';';
+            elementHeight = $el.height() * 1.4,
+            elementStyle = 'font-family: '+$el.css('font-family')+
+                '; font-size: '+$el.css('font-size')+';'+
+                'font-weight: '+$el.css('font-weight')+';';
+                
 
         if( opts.lineBreaks ) {
             defaultText = defaultText.replace(/<br( |)(|\/)>/g, '\n');
         }
 
-        $textArea = $('<textarea></textarea>');
+        switch (opts.type) {
+            case 'text':
+                $editElement = $('<input>', {type:'text'});
+                break;
+            case 'number':
+                $editElement = $('<input>', {type:'number'});
+                break;
+            case 'date':
+                $editElement = $('<input>', {type:'date'});
+                break;
+            default:
+                $editElement = $('<textarea/>');
+        } 
+
         $el.text('');
 
-        if( navigator.userAgent.match(/webkit/i) !== null ) {
-            textareaStyle = document.defaultView.getComputedStyle($el.get(0), "").cssText;
-        }
-        
-        // The editor should always be static 
-        textareaStyle += 'position: static';
+        // if( navigator.userAgent.match(/webkit/i) !== null ) {
+        //     elementStyle = document.defaultView.getComputedStyle($el.get(0), "").cssText;
+        // }
 
         /*
           TINYMCE EDITOR
          */
         if( opts.tinyMCE !== false ) {
             var id = 'editable-area-'+(new Date().getTime());
-            $textArea
+            $editElement
                 .val(defaultText)
                 .appendTo($el)
                 .attr('id', id);
@@ -142,8 +160,8 @@
                         // Update element and remove editor
                         resetElement($el, newText);
                         editor.remove();
-                        $textArea = false;
-                        $win.unbind('click', editorBlur);
+                        $editElement = false;
+                        $win.off('click', editorBlur);
                         $currentlyEdited = false;
 
                         // Run callback
@@ -158,13 +176,13 @@
 
                     // Blur editor when user clicks outside the editor
                     setTimeout(function() {
-                        $win.bind('click', editorBlur);
+                        $win.on('click', editorBlur);
                     }, 500);
 
                     // Create a dummy textarea that will called upon when
                     // programmatically interacting with the editor
-                    $textArea = $('<textarea></textarea>');
-                    $textArea.bind('blur', editorBlur);
+                    $editElement = $('<textarea/>');
+                    $editElement.on('blur', editorBlur);
 
                     editorWindow.onkeydown = function() {
                         hasPressedKey = true;
@@ -178,28 +196,33 @@
         }
 
         /*
-         TEXTAREA EDITOR
+         TEXTAREA, DATE, NUMBER EDITOR
          */
         else {
 
             if( opts.toggleFontSize || opts.closeOnEnter ) {
-                $win.bind('keydown', opts, keyHandler);
+                $win.on('keydown', opts, keyHandler);
             }
-            $win.bind('keyup', adjustTextAreaHeight);
+            if (opts.type === 'textarea'){
+                $win.on('keyup', adjustTextAreaHeight);
+            }
 
-            $textArea
+            $editElement
                 .val(defaultText)
                 .blur(function() {
 
                     $currentlyEdited = false;
 
                     // Get new text and font size
-                    var newText = $.trim( $textArea.val() ),
-                        newFontSize = $textArea.css('font-size');
+                    var newText = $.trim( $editElement.val() ),
+                        newFontSize = $editElement.css('font-size');
                     if( opts.lineBreaks ) {
                         newText = newText.replace(new RegExp('\n','g'), '<br />');
                     }
-
+                    if (!newText) {
+                        resetElement($el, $oldElement.text());
+                        return;
+                    }
                     // Update element
                     resetElement($el, newText);
                     if( newFontSize != defaultFontSize ) {
@@ -207,8 +230,8 @@
                     }
 
                     // remove textarea and size toggles
-                    $win.unbind('keydown', keyHandler);
-                    $win.unbind('keyup', adjustTextAreaHeight);
+                    $win.off('keydown', keyHandler);
+                    $win.off('keyup', adjustTextAreaHeight);
 
                     // Run callback
                     if( typeof opts.callback == 'function' ) {
@@ -219,13 +242,13 @@
                         });
                     }
                 })
-                .attr('style', textareaStyle)
+                .addClass(opts.cssClass)
+                .attr('style', elementStyle)
                 .appendTo($el)
                 .css({
                     margin: 0,
-                    padding: 0,
-                    height : elementHeight +'px',
-                    overflow : 'hidden'
+                    padding: '2px',
+                    height : elementHeight + 4 +'px',
                 })
                 .focus()
                 .get(0).select();
@@ -234,7 +257,7 @@
 
         }
 
-        $el.trigger('edit', [$textArea]);
+        $el.trigger('edit', [$editElement]);
     },
 
     /**
@@ -273,14 +296,14 @@
                         break;
                     case 'close':
                         if( this.is(':editing') ) {
-                            $textArea.trigger('blur');
+                            $editElement.trigger('blur');
                         }
                         break;
                     case 'destroy':
                         if( this.is(':editing') ) {
-                            $textArea.trigger('blur');
+                            $editElement.trigger('blur');
                         }
-                        this.unbind(this.attr(EVENT_ATTR));
+                        this.off(this.attr(EVENT_ATTR));
                         this.removeAttr(EVENT_ATTR);
                         break;
                     default:
@@ -304,7 +327,9 @@
                 lineBreaks : true,
                 toggleFontSize : true,
                 closeOnEnter : false,
-                tinyMCE : false
+                tinyMCE : false, 
+                type : 'textarea',
+                cssClass:'editable--editing'
             }, opts);
 
             if( opts.tinyMCE !== false && !TINYMCE_INSTALLED ) {
@@ -314,14 +339,14 @@
 
             if( SUPPORTS_TOUCH && opts.touch ) {
                 opts.event = DBL_TAP_EVENT;
-                this.unbind('touchend', tapper);
-                this.bind('touchend', tapper);
+                this.off('touchend', tapper);
+                this.on('touchend', tapper);
             }
             else {
                 opts.event += '.textEditor';
             }
 
-            this.bind(opts.event, opts, editEvent);
+            this.on(opts.event, opts, editEvent);
             this.attr(EVENT_ATTR, opts.event);            
         }
 
